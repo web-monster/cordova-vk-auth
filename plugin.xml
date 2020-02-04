@@ -37,6 +37,15 @@
     <framework src="SafariServices.framework" custom="false"/>
     <resource-file src="src/ios/VKSdkResources.bundle" />
 
+    <podspec>
+      <config>
+        <source url="https://github.com/CocoaPods/Specs.git"/>
+      </config>
+      <pods use-frameworks="true">
+        <pod name="VK-ios-sdk" spec="1.4.6"/>
+      </pods>
+    </podspec>
+
     <config-file target="*-Info.plist" parent="CFBundleURLTypes">
       <array>
         <dict>

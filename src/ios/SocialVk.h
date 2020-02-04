@@ -2,7 +2,7 @@
 //  SocialVk.h
 
 #import <Cordova/CDV.h>
-#import <VKSdk/VKSdk.h>
+#import <VK_ios_sdk/VKSdk.h>
 
 @interface SocialVk : CDVPlugin <VKSdkDelegate, VKSdkUIDelegate>
 {
