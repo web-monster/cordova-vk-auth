@@ -51,12 +51,16 @@ dependencies {
 android {
     compileSdkVersion 27
     buildToolsVersion "27.0.3"
-    publishNonDefault true
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_6
         targetCompatibility JavaVersion.VERSION_1_6
     }
+
+    defaultConfig {
+        minSdkVersion 15
+    }
+
 
     sourceSets {
         main {
