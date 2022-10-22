@@ -24,19 +24,7 @@
 - (void)users_getSubscriptions:(CDVInvokedUrlCommand*)command;
 - (void)users_getFollowers:(CDVInvokedUrlCommand*)command;
 
-- (void)wall_post:(CDVInvokedUrlCommand*)command;
-
-- (void)photos_getUploadServer:(CDVInvokedUrlCommand*)command;
-- (void)photos_getWallUploadServer:(CDVInvokedUrlCommand*)command;
-- (void)photos_saveWallPhoto:(CDVInvokedUrlCommand*)command;
-- (void)photos_save:(CDVInvokedUrlCommand*)command;
-
 - (void)friends_get:(CDVInvokedUrlCommand*)command;
-- (void)friends_getOnline:(CDVInvokedUrlCommand*)command;
-- (void)friends_getMutual:(CDVInvokedUrlCommand*)command;
-- (void)friends_getRecent:(CDVInvokedUrlCommand*)command;
-- (void)friends_getRequests:(CDVInvokedUrlCommand*)command;
-
 - (void)callApiMethod:(CDVInvokedUrlCommand*)command;
 
 @end

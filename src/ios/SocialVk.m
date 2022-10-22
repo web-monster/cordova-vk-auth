@@ -3,7 +3,6 @@
 
 #import "SocialVk.h"
 #import <VK_ios_sdk/VKBundle.h>
-#import "NSData+Base64.h"
 
 static NSString *VK_AUTHORIZE_URL_STRING = @"vkauthorize://authorize";
 
@@ -12,21 +11,24 @@ static NSString *VK_AUTHORIZE_URL_STRING = @"vkauthorize://authorize";
     void (^vkCallBackBlock)(NSString *, NSString *);
     BOOL inited;
     NSMutableDictionary *loginDetails;
+    NSArray *_permissions;
+    VKSdk* _vkSdk;
 }
 
 @synthesize clientId;
 
 - (void) initSocialVk:(CDVInvokedUrlCommand*)command
 {
+    _permissions = @[VK_PER_OFFLINE, VK_PER_EMAIL];
     CDVPluginResult* pluginResult = nil;
-    
-    
+
     if(!inited) {
         NSString *appId = [[NSString alloc] initWithString:[command.arguments objectAtIndex:0]];
-        [VKSdk initializeWithAppId:appId];
-        [VKSdk.instance registerDelegate:self];
-        VKSdk.instance.uiDelegate = self;
-        [VKSdk wakeUpSession:@[VK_PER_OFFLINE] completeBlock:^(VKAuthorizationState state, NSError *err) {
+        _vkSdk = [VKSdk initializeWithAppId:appId];
+        [_vkSdk registerDelegate:self];
+        [_vkSdk setUiDelegate:self];
+        _vkSdk.uiDelegate = self;
+        [VKSdk wakeUpSession:_permissions completeBlock:^(VKAuthorizationState state, NSError *err) {
             if(err) {
                 NSLog(@"VK init error: %@", err);
             }
@@ -159,13 +161,11 @@ static NSString *VK_AUTHORIZE_URL_STRING = @"vkauthorize://authorize";
 -(void)vkLoginWithPermissions:(NSArray*)permissions andBlock:(void (^)(NSString *, NSString *))block
 {
     vkCallBackBlock = [block copy];
-    if(!permissions || permissions.count < 1)
-    permissions = @[VK_PER_WALL, VK_PER_OFFLINE];
-    //BOOL inApp = YES;
-    //if([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:VK_AUTHORIZE_URL_STRING]])
-    //    inApp = NO;
-    //[VKSdk authorize:permissions revokeAccess:NO forceOAuth:NO inApp:inApp display:VK_DISPLAY_IOS];
-    [VKSdk authorize:permissions];
+    if(!permissions || permissions.count < 1) {
+        permissions = @[VK_PER_EMAIL, VK_PER_OFFLINE];
+    }
+
+    [VKSdk authorize:permissions withOptions:VKAuthorizationOptionsUnlimitedToken|VKAuthorizationOptionsDisableSafariController|VKAuthorizationOptionsEnableProviders];
 }
 
 -(void)logout:(CDVInvokedUrlCommand *)command
@@ -249,60 +249,6 @@ static NSString *VK_AUTHORIZE_URL_STRING = @"vkauthorize://authorize";
     [self performRequest:req withCommand:command];
 }
 
-- (void)wall_post:(CDVInvokedUrlCommand*)command
-{
-    id arg = [command.arguments objectAtIndex:0];
-    NSDictionary *params;
-    if([arg isKindOfClass:NSDictionary.class]) {
-        params = arg;
-    } else {
-        params = @{VK_API_MESSAGE: arg};
-    }
-    VKRequest *req = [[VKApi wall] post:params];
-    [self performRequest:req withCommand:command];
-}
-
-- (void)photos_getUploadServer:(CDVInvokedUrlCommand*)command
-{
-    NSNumber *album_id = [command.arguments objectAtIndex:0];
-    NSNumber *group_id = [command.arguments objectAtIndex:1];
-    VKRequest *req;
-    if(group_id && group_id.integerValue > 0) {
-        req = [[VKApi photos] getUploadServer:album_id.integerValue andGroupId:group_id.integerValue];
-    } else {
-        req = [[VKApi photos] getUploadServer:album_id.integerValue];
-    }
-    [self performRequest:req withCommand:command];
-}
-
-- (void)photos_getWallUploadServer:(CDVInvokedUrlCommand*)command
-{
-    NSNumber *group_id = [command.arguments objectAtIndex:0];
-    VKRequest *req = [[VKApi photos] getWallUploadServer:group_id.integerValue];
-    [self performRequest:req withCommand:command];
-}
-
-- (void)photos_saveWallPhoto:(CDVInvokedUrlCommand*)command
-{
-    NSString *imageBase64 = [command.arguments objectAtIndex:0];
-    NSNumber *user_id = [command.arguments objectAtIndex:1];
-    NSNumber *group_id = [command.arguments objectAtIndex:2];
-    UIImage *image = [[UIImage alloc] initWithData:[NSData dataWithBase64EncodedString:imageBase64]];
-    VKRequest *req = [VKApi uploadWallPhotoRequest:image parameters:[VKImageParameters pngImage] userId:user_id.integerValue groupId:group_id.integerValue];
-    [self performRequest:req withCommand:command];
-}
-
-- (void)photos_save:(CDVInvokedUrlCommand*)command
-{
-    NSString *imageBase64 = [command.arguments objectAtIndex:0];
-    NSNumber *album_id = [command.arguments objectAtIndex:1];
-    NSNumber *group_id = [command.arguments objectAtIndex:2];
-    UIImage *image = [[UIImage alloc] initWithData:[NSData dataWithBase64EncodedString:imageBase64]];
-    VKRequest *req = [VKApi uploadAlbumPhotoRequest:image parameters:[VKImageParameters pngImage] albumId:album_id.integerValue groupId:group_id.integerValue];
-    //VKRequest *req = [[VKApi photos] save:<#(NSDictionary *)#>];
-    [self performRequest:req withCommand:command];
-}
-
 - (void)friends_get:(CDVInvokedUrlCommand*)command
 {
     NSNumber *user_id = [command.arguments objectAtIndex:0];
@@ -312,53 +258,6 @@ static NSString *VK_AUTHORIZE_URL_STRING = @"vkauthorize://authorize";
     NSString *fields = [command.arguments objectAtIndex:4];
     NSString *name_case = [command.arguments objectAtIndex:5];
     VKRequest *req = [[VKApi friends] get:@{VK_API_USER_ID: user_id, VK_API_ORDER: order, VK_API_COUNT: count, VK_API_OFFSET: offset, VK_API_FIELDS: fields, VK_API_NAME_CASE: name_case}];
-    [self performRequest:req withCommand:command];
-}
-
-- (void)friends_getOnline:(CDVInvokedUrlCommand*)command
-{
-    NSNumber *user_id = [command.arguments objectAtIndex:0];
-    NSString *order = [command.arguments objectAtIndex:1];
-    NSNumber *count = [command.arguments objectAtIndex:2];
-    NSNumber *offset = [command.arguments objectAtIndex:3];
-    VKRequest *req = [VKRequest requestWithMethod:@"friends.getOnline" parameters:@{VK_API_USER_ID: user_id, VK_API_ORDER:order, VK_API_COUNT: count, VK_API_OFFSET: offset}];
-    [self performRequest:req withCommand:command];
-}
-
-- (void)friends_getMutual:(CDVInvokedUrlCommand*)command
-{
-    NSNumber *source_uid = [command.arguments objectAtIndex:0];
-    id target_uid = [command.arguments objectAtIndex:1];
-    NSString *order = [command.arguments objectAtIndex:2];
-    NSNumber *count = [command.arguments objectAtIndex:3];
-    NSNumber *offset = [command.arguments objectAtIndex:4];
-    NSMutableDictionary *params = [@{@"source_uid": source_uid, VK_API_ORDER: order, VK_API_COUNT: count, VK_API_OFFSET: offset} mutableCopy];
-    if([target_uid isKindOfClass:NSNumber.class]) {
-        params[@"target_uid"] = target_uid;
-    } else if([target_uid isKindOfClass:NSString.class]) {
-        params[@"target_uids"] = target_uid;
-    }
-    VKRequest *req = [VKRequest requestWithMethod:@"friends.getMutual" parameters:params];
-    [self performRequest:req withCommand:command];
-}
-
-- (void)friends_getRecent:(CDVInvokedUrlCommand*)command
-{
-    NSNumber *count = [command.arguments objectAtIndex:0];
-    VKRequest *req = [VKRequest requestWithMethod:@"friends.getRecent" parameters:@{VK_API_COUNT: count}];
-    [self performRequest:req withCommand:command];
-}
-
-- (void)friends_getRequests:(CDVInvokedUrlCommand*)command
-{
-    NSNumber *offset = [command.arguments objectAtIndex:0];
-    NSNumber *count = [command.arguments objectAtIndex:1];
-    NSNumber *extended = [command.arguments objectAtIndex:2];
-    NSNumber *needs_mutual = [command.arguments objectAtIndex:3];
-    NSNumber *out_ = [command.arguments objectAtIndex:4];
-    NSNumber *sort = [command.arguments objectAtIndex:5];
-    NSNumber *suggested = [command.arguments objectAtIndex:6];
-    VKRequest *req = [VKRequest requestWithMethod:@"friends.getRequests" parameters:@{VK_API_OFFSET: offset, VK_API_COUNT: count, VK_API_EXTENDED: extended, @"needs_mutual": needs_mutual, @"out": out_, VK_API_SORT: sort, @"suggested": suggested}];
     [self performRequest:req withCommand:command];
 }
 

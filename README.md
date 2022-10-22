@@ -1,12 +1,12 @@
 # Cordova-vk-auth
 
-2019, @Rapoo
+2022, @web-monster
 
-Исправленная библиотека для авторизации и получения доступа к соц. сети ВКонтакте
+Исправленная библиотека для авторизации VK
 
 **Установка**
 
-    cordova plugin add https://github.com/iRapoo/cordova-vk-auth --variable VK_APP_ID=1234567 //Только цифры
+    cordova plugin add https://github.com/web-monster/cordova-vk-auth --variable VK_APP_ID=1234567 //Только цифры
 
 **Пример использования**
 
