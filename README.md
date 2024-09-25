@@ -1,6 +1,6 @@
 # Cordova-vk-auth
 
-2022, @web-monster
+2024, @web-monster
 
 Исправленная библиотека для авторизации VK
 
